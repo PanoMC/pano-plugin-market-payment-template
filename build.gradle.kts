@@ -3,6 +3,10 @@
 // Everything plugin-specific lives in gradle.properties.
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import java.net.URI
+import java.security.KeyFactory
+import java.security.interfaces.RSAPublicKey
+import java.security.spec.X509EncodedKeySpec
+import java.util.Base64
 import java.util.jar.JarFile
 import java.util.zip.ZipFile
 
@@ -111,6 +115,29 @@ val generatedLicenseSrcDir = layout.buildDirectory.dir("generated/license-source
  * The result is cached under `build/license-key-cache/`.
  */
 fun resolveLicensePublicKey(): String {
+    val key = resolveLicensePublicKeyUnchecked()
+    if (key.isNotEmpty()) requireDecodableLicenseKey(key)
+    return key
+}
+
+/**
+ * MP-B02: a non-empty key must decode exactly the way PluginLicenseClient.decodePublicKey() decodes it at run time
+ * (Base64 X.509 SubjectPublicKeyInfo, RSA). The runtime swallows decode errors and then treats the plugin as FREE, so a
+ * malformed key would silently ship a "premium" jar that runs without a license. Fail the build instead.
+ */
+fun requireDecodableLicenseKey(key: String) {
+    try {
+        val der = Base64.getDecoder().decode(key)
+        KeyFactory.getInstance("RSA").generatePublic(X509EncodedKeySpec(der)) as RSAPublicKey
+    } catch (e: Exception) {
+        throw GradleException(
+            "MP-B02: $pluginId: the license public key is not a Base64 X.509 RSA key (${e.message}). " +
+                "Check -PpanoLicensePublicKey / PANO_LICENSE_PUBLIC_KEY / the key served by the license server."
+        )
+    }
+}
+
+fun resolveLicensePublicKeyUnchecked(): String {
     val explicitProp = stripPemAndWhitespace(prop("panoLicensePublicKey")).takeIf { it.isNotEmpty() }
     val explicitEnv = System.getenv("PANO_LICENSE_PUBLIC_KEY")?.trim()?.takeIf { it.isNotEmpty() }
         ?.let(::stripPemAndWhitespace)?.takeIf { it.isNotEmpty() }
