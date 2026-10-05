@@ -1,1 +1,51 @@
-{}
+{
+  "descriptor": {
+    "name": "Example Pay",
+    "description": "Accept card and wallet payments through Example Pay.",
+    "hint": "Pay securely with Example Pay"
+  },
+  "settings": {
+    "groups": {
+      "credentials": "Credentials",
+      "options": "Options"
+    },
+    "fields": {
+      "apiKey": {
+        "label": "API key",
+        "help": "Secret API key from the developer section of your Example Pay dashboard. Use a test key together with test mode."
+      },
+      "webhookSecret": {
+        "label": "Webhook secret",
+        "help": "Signing secret of the webhook endpoint in your Example Pay dashboard."
+      },
+      "webhookUrl": {
+        "label": "Webhook URL",
+        "help": "Add this URL as a webhook endpoint in your Example Pay dashboard and select the events payment.updated and refund.updated."
+      },
+      "refundsEnabled": {
+        "label": "Allow refunds from the panel",
+        "help": "When off, Pano Market never asks Example Pay for a refund. Refund in your Example Pay dashboard instead."
+      },
+      "statementDescriptor": {
+        "label": "Statement descriptor",
+        "help": "Text on the buyer's card statement, at most 22 characters. Leave empty for the Example Pay default."
+      }
+    },
+    "actions": {
+      "test-connection": {
+        "label": "Test connection"
+      }
+    }
+  },
+  "errors": {
+    "missing": "This field is required.",
+    "authentication": "Example Pay rejected the API key.",
+    "unreachable": "Example Pay could not be reached. Try again in a moment."
+  },
+  "messages": {
+    "connectionOk": "The connection to Example Pay works."
+  },
+  "eligibility": {
+    "currency": "Example Pay cannot take payments in this currency."
+  }
+}

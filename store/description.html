@@ -1,0 +1,26 @@
+<h2>Example Pay for Pano Market</h2>
+<p>
+  Example Pay lets your store take card and wallet payments. This plugin adds Example Pay as a payment method to
+  <strong>Pano Market</strong>, which must be installed and running: it is a required dependency of this plugin.
+</p>
+<h3>What it supports</h3>
+<ul>
+  <li>Payments in EUR, USD, GBP, TRY and JPY, paid on the Example Pay hosted checkout page.</li>
+  <li>Full and partial refunds from the Pano panel.</li>
+  <li>Automatic payment status checks when the buyer returns to your store.</li>
+  <li>Test mode against the Example Pay sandbox.</li>
+  <li>One-time payments only; recurring payments are not offered.</li>
+</ul>
+<h3>Verification level</h3>
+<p>
+  Unverified: this plugin has not been tested against a live or sandbox Example Pay account. Its signature handling was
+  checked only with test values computed from the documented algorithm.
+</p>
+<h3>Setup</h3>
+<ol>
+  <li>Install Pano Market, then this plugin, and open Market, Payment methods, Example Pay in the panel.</li>
+  <li>Paste the API key and the webhook secret from the developer section of your Example Pay dashboard.</li>
+  <li>Copy the webhook URL shown in the form into your Example Pay dashboard as a webhook endpoint and select the events
+    <code>payment.updated</code> and <code>refund.updated</code>.</li>
+  <li>Press &ldquo;Test connection&rdquo;, then enable the method.</li>
+</ol>

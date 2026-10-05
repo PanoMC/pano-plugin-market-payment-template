@@ -1,1 +1,51 @@
-{}
+{
+  "descriptor": {
+    "name": "Example Pay",
+    "description": "Example Pay ile kart ve cüzdan ödemeleri alın.",
+    "hint": "Example Pay ile güvenle ödeyin"
+  },
+  "settings": {
+    "groups": {
+      "credentials": "Kimlik bilgileri",
+      "options": "Seçenekler"
+    },
+    "fields": {
+      "apiKey": {
+        "label": "API anahtarı",
+        "help": "Example Pay panelinizin geliştirici bölümündeki gizli API anahtarı. Test modunda test anahtarı kullanın."
+      },
+      "webhookSecret": {
+        "label": "Webhook gizli anahtarı",
+        "help": "Example Pay panelinizdeki webhook uç noktasının imza anahtarı."
+      },
+      "webhookUrl": {
+        "label": "Webhook adresi",
+        "help": "Bu adresi Example Pay panelinizde webhook uç noktası olarak ekleyin ve payment.updated ile refund.updated olaylarını seçin."
+      },
+      "refundsEnabled": {
+        "label": "Panelden iadeye izin ver",
+        "help": "Kapalıyken Pano Market, Example Pay'den iade istemez. İadeleri Example Pay panelinizden yapın."
+      },
+      "statementDescriptor": {
+        "label": "Ekstre açıklaması",
+        "help": "Alıcının kart ekstresinde görünen metin, en fazla 22 karakter. Example Pay varsayılanı için boş bırakın."
+      }
+    },
+    "actions": {
+      "test-connection": {
+        "label": "Bağlantıyı test et"
+      }
+    }
+  },
+  "errors": {
+    "missing": "Bu alan zorunludur.",
+    "authentication": "Example Pay API anahtarını reddetti.",
+    "unreachable": "Example Pay'e ulaşılamadı. Biraz sonra tekrar deneyin."
+  },
+  "messages": {
+    "connectionOk": "Example Pay bağlantısı çalışıyor."
+  },
+  "eligibility": {
+    "currency": "Example Pay bu para biriminde ödeme alamaz."
+  }
+}

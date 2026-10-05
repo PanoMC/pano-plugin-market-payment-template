@@ -1,1 +1,51 @@
-{}
+{
+  "descriptor": {
+    "name": "Example Pay",
+    "description": "Принимайте платежи картами и кошельками через Example Pay.",
+    "hint": "Безопасная оплата через Example Pay"
+  },
+  "settings": {
+    "groups": {
+      "credentials": "Учётные данные",
+      "options": "Параметры"
+    },
+    "fields": {
+      "apiKey": {
+        "label": "API-ключ",
+        "help": "Секретный API-ключ из раздела для разработчиков в личном кабинете Example Pay. В тестовом режиме используйте тестовый ключ."
+      },
+      "webhookSecret": {
+        "label": "Секрет вебхука",
+        "help": "Ключ подписи конечной точки вебхука в личном кабинете Example Pay."
+      },
+      "webhookUrl": {
+        "label": "URL вебхука",
+        "help": "Добавьте этот адрес как конечную точку вебхука в личном кабинете Example Pay и выберите события payment.updated и refund.updated."
+      },
+      "refundsEnabled": {
+        "label": "Разрешить возвраты из панели",
+        "help": "Если выключено, Pano Market не запрашивает возвраты у Example Pay. Делайте возвраты в личном кабинете Example Pay."
+      },
+      "statementDescriptor": {
+        "label": "Описание в выписке",
+        "help": "Текст в выписке по карте покупателя, не более 22 символов. Оставьте пустым для значения Example Pay по умолчанию."
+      }
+    },
+    "actions": {
+      "test-connection": {
+        "label": "Проверить соединение"
+      }
+    }
+  },
+  "errors": {
+    "missing": "Это поле обязательно.",
+    "authentication": "Example Pay отклонил API-ключ.",
+    "unreachable": "Не удалось связаться с Example Pay. Повторите попытку чуть позже."
+  },
+  "messages": {
+    "connectionOk": "Соединение с Example Pay работает."
+  },
+  "eligibility": {
+    "currency": "Example Pay не принимает платежи в этой валюте."
+  }
+}

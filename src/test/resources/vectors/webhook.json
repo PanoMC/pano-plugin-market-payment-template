@@ -1,0 +1,36 @@
+{
+  "kind": "SELF_DERIVED",
+  "source": "VERIFICATION.md of this repository (signature algorithm of the template gateway)",
+  "retrievedAt": "2026-10-05",
+  "note": "The template gateway is imaginary, so there is no official documentation to copy from: these values were computed with an independent implementation (Python hmac) from the documented algorithm. They prove stability, not correctness against a real gateway.",
+  "cases": [
+    {
+      "name": "payment.updated paid EUR",
+      "secret": "whsec_example_sample_secret",
+      "timestamp": 1760000000,
+      "input": "{\"id\":\"evt_1001\",\"type\":\"payment.updated\",\"createdAt\":1760000000,\"data\":{\"id\":\"pay_2001\",\"reference\":\"ABCDEFGHJKMNPQRSTVWX\",\"status\":\"paid\",\"amount\":1234,\"currency\":\"EUR\",\"amountPaid\":1234}}",
+      "expected": "8c76331f9b80101a3019c6c70edf10e65e106cd811cd0ed686cf7d394381444b"
+    },
+    {
+      "name": "refund.updated succeeded",
+      "secret": "whsec_example_sample_secret",
+      "timestamp": 1760000100,
+      "input": "{\"id\":\"evt_1002\",\"type\":\"refund.updated\",\"createdAt\":1760000100,\"data\":{\"id\":\"rf_3001\",\"paymentId\":\"pay_2001\",\"reference\":\"ABCDEFGHJKMNPQRSTVWX\",\"status\":\"succeeded\",\"amount\":500,\"currency\":\"EUR\"}}",
+      "expected": "e35c60a5cd1840a06f3aa64e6577452eb131d2843c4b72c6892e7bcb0ecd34eb"
+    },
+    {
+      "name": "empty body",
+      "secret": "whsec_example_sample_secret",
+      "timestamp": 1760000300,
+      "input": "",
+      "expected": "0959fafc12134ff37fccc695f25bf68a9aa77e419007ccd9a1673202506d3b75"
+    },
+    {
+      "name": "non-ascii body (UTF-8 bytes are signed, not characters)",
+      "secret": "whsec_example_sample_secret",
+      "timestamp": 1760000200,
+      "input": "{\"id\":\"evt_1003\",\"type\":\"payment.updated\",\"createdAt\":1760000200,\"data\":{\"id\":\"pay_2002\",\"reference\":\"ABCDEFGHJKMNPQRSTVWX\",\"status\":\"paid\",\"amount\":50000,\"currency\":\"JPY\",\"amountPaid\":500,\"note\":\"Ödeme ✓\"}}",
+      "expected": "616019f54014871321819e09534d7df29f14ca6ad647edcdeb6ad2c7a7ad0bfb"
+    }
+  ]
+}

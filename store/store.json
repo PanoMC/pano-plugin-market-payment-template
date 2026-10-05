@@ -1,0 +1,12 @@
+{
+  "id": "pano-plugin-market-example",
+  "name": "Market: Example Pay",
+  "type": "PLUGIN",
+  "category": "TOOLS_AND_UTILITIES",
+  "license": "MIT",
+  "shortDescription": "Accept Example Pay payments in your Pano Market store.",
+  "descriptionFile": "description.html",
+  "customLinks": { "Documentation": "https://panomc.com/docs" },
+  "priceDev": 5,
+  "icon": "../src/main/resources/logo.png"
+}

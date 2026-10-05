@@ -1,0 +1,149 @@
+#!/usr/bin/env bash
+# One-shot: turns the Example Pay template into a plugin for another gateway (spec 16 sections 2.2 and 4.3).
+#
+#   scripts/rename.sh <slug> "<Display name>"
+#
+# Run it once, in a fresh copy of the template, before you change anything else. It renames in place:
+#   provider id            example                          -> <slug>
+#   plugin id / jar name   pano-plugin-market-example        -> pano-plugin-market-<slug>
+#   root package           com.panomc.plugins.marketpay.example -> com.panomc.plugins.marketpay.<pkg>   (<pkg> = slug without hyphens)
+#   classes                Example*                          -> <Cls>*                                    (<Cls> = slug in PascalCase)
+#   display name           Example Pay                       -> <Display name>
+# and rewrites package.json, .releaserc.json, store/store.json, gradle.properties (description, source URL), README.md
+# (a short stub) and AGENT.md (placeholders). build.gradle.kts, the license package, LICENSE, gradle/ and scripts/ are
+# never touched.
+# Needs bash and GNU sed (Linux, WSL, Git Bash).
+set -euo pipefail
+
+usage() {
+  echo "usage: scripts/rename.sh <slug> \"<Display name>\"" >&2
+  echo "  slug: lower-case letters, digits and single hyphens, 2-29 characters, starting with a letter" >&2
+  exit 2
+}
+
+[ $# -eq 2 ] || usage
+slug=$1
+display=$2
+
+die() { echo "rename.sh: $*" >&2; exit 1; }
+
+# ---- validate ---------------------------------------------------------------------------------------------------------
+[[ "$slug" =~ ^[a-z][a-z0-9]*(-[a-z0-9]+)*$ ]] || die "slug '$slug' must match [a-z][a-z0-9]*(-[a-z0-9]+)* (it becomes a Kotlin package and class name, so it starts with a letter)"
+[ ${#slug} -ge 2 ] && [ ${#slug} -le 29 ] || die "slug '$slug' must be 2 to 29 characters long (the plugin id pano-plugin-market-<slug> may have at most 48)"
+[[ ! "$slug" =~ -v[0-9] ]] || die "slug '$slug' must not contain '-v<digit>' (it would break the <slug>-v<version> git tags)"
+[ "$slug" != "example" ] || die "the slug 'example' is the template itself; pick the gateway's name"
+[ -n "$display" ] || die "the display name must not be empty"
+[ ${#display} -le 40 ] || die "the display name must be at most 40 characters (the store name 'Market: <name>' is limited to 64)"
+case "$display" in
+  *'"'*|*'\'*|*'/'*|*'|'*|*'$'*|*'`'*|*$'\n'*|*$'\r'*|*$'\t'*) die "the display name must not contain  \" \\ / | \$ \` or control characters" ;;
+esac
+
+cd "$(dirname "$0")/.."
+[ -f gradle.properties ] && [ -d src/main/kotlin/com/panomc/plugins/marketpay/example ] || die "this does not look like an unrenamed template (no src/main/kotlin/com/panomc/plugins/marketpay/example)"
+
+pluginId="pano-plugin-market-$slug"
+pkg=${slug//-/}
+cls=""
+IFS='-' read -ra parts <<< "$slug"
+for part in "${parts[@]}"; do cls+="$(tr '[:lower:]' '[:upper:]' <<< "${part:0:1}")${part:1}"; done
+
+# sed replacement text: escape the characters that are special on the right-hand side
+esc() { printf '%s' "$1" | sed -e 's/[&\\|]/\\&/g'; }
+displayEsc=$(esc "$display")
+
+echo "slug=$slug  plugin id=$pluginId  package=com.panomc.plugins.marketpay.$pkg  class prefix=$cls  display name=$display"
+
+# ---- move the source folders and rename the files -----------------------------------------------------------------------
+for set in main test; do
+  from="src/$set/kotlin/com/panomc/plugins/marketpay/example"
+  to="src/$set/kotlin/com/panomc/plugins/marketpay/$pkg"
+  [ -d "$from" ] || continue
+  mv "$from" "$to"
+  while IFS= read -r file; do
+    base=$(basename "$file")
+    if [[ "$base" == Example*.kt ]]; then mv "$file" "$(dirname "$file")/${cls}${base#Example}"; fi
+  done < <(find "$to" -type f -name 'Example*.kt')
+done
+
+# ---- text replacement (order is normative, spec 16 section 4.3) -----------------------------------------------------------
+rewrite() {
+  sed -i \
+    -e "s|pano-plugin-market-example|$pluginId|g" \
+    -e "s|marketpay\\.example|marketpay.$pkg|g" \
+    -e "s|Example Pay|$displayEsc|g" \
+    -e "s|Example|$cls|g" \
+    -e "s|\"example\"|\"$slug\"|g" \
+    "$1"
+}
+
+while IFS= read -r file; do
+  rewrite "$file"
+done < <(find src store .github settings.gradle.kts gradle.properties package.json .releaserc.json VERIFICATION.md \
+           -type f \( -name '*.kt' -o -name '*.json' -o -name '*.conf' -o -name '*.md' -o -name '*.yml' -o -name '*.html' -o -name '*.kts' -o -name '*.properties' \) \
+           ! -path 'src/main/kotlin/com/panomc/plugins/license/*' 2>/dev/null)
+
+# ---- files that are rewritten rather than substituted ------------------------------------------------------------------------
+sed -i \
+  -e "s|^pluginName=.*|pluginName=Market: $displayEsc|" \
+  -e "s|^pluginDescription=.*|pluginDescription=$displayEsc payments for Pano Market.|" \
+  -e "s|^pluginSourceUrl=.*|pluginSourceUrl=|" \
+  gradle.properties
+
+cat > package.json <<JSON
+{
+  "name": "$slug",
+  "private": true,
+  "version": "0.0.0"
+}
+JSON
+
+# A standalone repository releases with plain semantic-release; the upload to the store is the optional second step.
+cat > .releaserc.json <<JSON
+{
+  "branches": [{ "name": "dev", "prerelease": true }, "main"],
+  "plugins": [
+    "@semantic-release/commit-analyzer",
+    "@semantic-release/release-notes-generator",
+    ["@PanoMC/semantic-release-pano", {
+      "file": "build/libs/$pluginId-\${version}.jar",
+      "panoVersion": "1.0.0",
+      "configs": [
+        { "resourceId": "$pluginId", "panoUrl": "https://api-dev.panomc.com", "tokenVar": "PANO_TOKEN", "branches": ["dev"] },
+        { "resourceId": "$pluginId", "panoUrl": "https://api.panomc.com", "tokenVar": "PANO_PROD_TOKEN", "branches": ["main"] }
+      ]
+    }],
+    ["@semantic-release/github", {
+      "assets": [{ "path": "build/libs/$pluginId-*.jar", "label": false }],
+      "successComment": false, "failComment": false, "releasedLabels": false
+    }]
+  ]
+}
+JSON
+
+cat > README.md <<MD
+# $display for Pano Market
+
+Payment provider plugin \`$pluginId\` (provider id \`$slug\`) for [Pano Market](https://panomc.com), created from the
+Pano Market payment template with \`scripts/rename.sh\`.
+
+\`\`\`
+./gradlew build      # compile, test, build and verify build/libs/$pluginId-<version>.jar
+\`\`\`
+
+Read \`AGENT.md\` for what to implement and in which order. The class layout, the gates of the build and the rules a provider
+must keep are the ones of the template; its README (https://github.com/PanoMC/pano-plugin-market-payment-template) explains them.
+
+The code still talks to the imaginary "Example Pay" protocol of the template (\`$cls*.kt\`, \`src/test/resources/vectors\`):
+replace it with the real gateway protocol, then update \`VERIFICATION.md\`, \`store/description.html\` and the locale files.
+MD
+
+# AGENT.md holds placeholders instead of names
+sed -i \
+  -e "s|<Display name>|$displayEsc|g" \
+  -e "s|<slug>|$slug|g" \
+  -e "s|<plugin id>|$pluginId|g" \
+  -e "s|<package>|com.panomc.plugins.marketpay.$pkg|g" \
+  -e "s|<Cls>|$cls|g" \
+  AGENT.md
+
+echo "done. Next: ./gradlew build, then replace the example protocol with the gateway's (see AGENT.md)."
