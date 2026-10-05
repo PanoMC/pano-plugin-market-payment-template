@@ -304,7 +304,18 @@ class ExampleProvider(
             // The gateway understood and refused (already refunded, too old, over the balance): a final answer.
             return RefundResult.Failed(response.errorCode ?: "rejected", response.adminMessage)
         }
-        return ExampleMapper.refundResult(response.json)
+        val result = ExampleMapper.refundResult(response.json)
+        // The gateway accepted the request (2xx) but the status is missing or unknown: the refund exists and is not final.
+        // Pending with the gateway refund id lets market's reconcile job poll queryRefund; a bare Unknown would leave a
+        // row without an id that can never be queried while the money may already be on its way back to the buyer.
+        // Without an id (empty 2xx body) there is nothing to poll: Unknown stays, and a retry re-sends the same idempotency key.
+        if (result is RefundResult.Unknown && result.gatewayRefundId != null) {
+            return RefundResult.Pending().also {
+                it.gatewayRefundId = result.gatewayRefundId
+                it.refundedAmount = result.refundedAmount
+            }
+        }
+        return result
     }
 
     override suspend fun queryRefund(ctx: PaymentContext, request: QueryRefundRequest): RefundResult {

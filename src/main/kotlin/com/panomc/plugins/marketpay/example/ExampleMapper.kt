@@ -109,13 +109,16 @@ object ExampleMapper {
         }
     }
 
-    /** The answer of `POST /v1/payments/{id}/refunds` or `GET /v1/refunds/{id}`; unknown status is [RefundResult.unknown]. */
+    /**
+     * The answer of `POST /v1/payments/{id}/refunds` or `GET /v1/refunds/{id}`; an unknown status is [RefundResult.unknown],
+     * and it still carries the gateway refund id and amount when the answer had them, so the caller can keep polling.
+     */
     fun refundResult(refund: JsonObject): RefundResult {
         val result: RefundResult = when (refundState(refund.str("status"))) {
             RefundState.SUCCEEDED -> RefundResult.Succeeded()
             RefundState.PENDING -> RefundResult.Pending()
             RefundState.FAILED, RefundState.CANCELLED -> RefundResult.Failed(refund.str("failureCode") ?: "failed", refund.str("failureMessage"))
-            null -> return RefundResult.unknown()
+            null -> RefundResult.unknown()
         }
         result.gatewayRefundId = refund.str("id")
         result.refundedAmount = moneyOrNull(refund.long("amount"), refund.str("currency"))

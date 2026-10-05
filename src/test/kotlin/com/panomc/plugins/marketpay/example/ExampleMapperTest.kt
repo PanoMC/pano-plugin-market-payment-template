@@ -145,6 +145,11 @@ class ExampleMapperTest {
         assertTrue(ExampleMapper.refundResult(Hooks.refund("pending")) is RefundResult.Pending)
         (ExampleMapper.refundResult(Hooks.refund("failed").put("failureCode", "too_old")) as RefundResult.Failed).also { assertEquals("too_old", it.code) }
         assertTrue(ExampleMapper.refundResult(Hooks.refund("mystery")) is RefundResult.Unknown)
+        // An unknown status keeps the gateway's refund id and amount: it is what the reconcile job polls with.
+        ExampleMapper.refundResult(Hooks.refund("mystery")).also {
+            assertEquals("rf_1", it.gatewayRefundId)
+            assertEquals(Money(500, "EUR"), it.refundedAmount)
+        }
         assertFalse(ExampleMapper.refundResult(Hooks.refund("succeeded")).refundedAmount == null)
     }
 }

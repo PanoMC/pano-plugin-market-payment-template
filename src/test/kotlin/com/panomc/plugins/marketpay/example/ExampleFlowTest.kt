@@ -342,6 +342,30 @@ class ExampleFlowTest {
     }
 
     @Test
+    fun `P-20 a 2xx answer with an unknown status is Pending with the gateway refund id, so market can poll it`(): Unit = env { env ->
+        env.gateway.on("POST", "/v1/payments/pay_1/refunds") { jsonReply(Hooks.refund("processing")) }
+        val result = refund(env, refundRequest(eur(500)))
+        assertTrue(result is RefundResult.Pending, "an accepted refund is not final but is not unknown either: $result")
+        assertEquals("rf_1", result.gatewayRefundId)
+
+        // No status at all behaves the same.
+        env.gateway.on("POST", "/v1/payments/pay_1/refunds") { jsonReply(Hooks.refund("succeeded").also { it.remove("status") }) }
+        assertEquals("rf_1", (refund(env, refundRequest(eur(500))) as RefundResult.Pending).gatewayRefundId)
+
+        // An empty 2xx body has no id to poll: the outcome stays unknown (a retry re-sends the same idempotency key).
+        env.gateway.on("POST", "/v1/payments/pay_1/refunds") { jsonReply(JsonObject()) }
+        val bare = refund(env, refundRequest(eur(500)))
+        assertTrue(bare is RefundResult.Unknown, "$bare")
+        assertNull(bare.gatewayRefundId)
+
+        // The id that was returned is the one queryRefund asks for.
+        env.gateway.on("GET", "/v1/refunds/rf_1") { jsonReply(Hooks.refund("succeeded")) }
+        assertTrue(blocking {
+            env.provider.queryRefund(env.ctx, QueryRefundRequest(3, "refund-key-1", "rf_1", attempt(paid = eur(1000)), eur(500)))
+        } is RefundResult.Succeeded)
+    }
+
+    @Test
     fun `P-20 with refunds switched off the capability is NONE and refund is UNSUPPORTED`(): Unit = env(overrides = mapOf("refundsEnabled" to false)) { env ->
         assertEquals(RefundSupport.NONE, env.provider.capabilities(env.ctx.settings).refund)
         expectProviderError(ProviderErrorCode.UNSUPPORTED) { refund(env, refundRequest(eur(500))) }

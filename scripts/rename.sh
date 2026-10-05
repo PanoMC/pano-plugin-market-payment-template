@@ -10,8 +10,8 @@
 #   classes                Example*                          -> <Cls>*                                    (<Cls> = slug in PascalCase)
 #   display name           Example Pay                       -> <Display name>
 # and rewrites package.json, .releaserc.json, store/store.json, gradle.properties (description, source URL), README.md
-# (a short stub) and AGENT.md (placeholders). build.gradle.kts, the license package, LICENSE, gradle/ and scripts/ are
-# never touched.
+# (a short stub) and AGENT.md (placeholders), and removes the template-only `rename-smoke` job from .github/workflows/ci.yml.
+# build.gradle.kts, the license package, LICENSE, gradle/ and scripts/ are never touched.
 # Needs bash and GNU sed (Linux, WSL, Git Bash).
 set -euo pipefail
 
@@ -81,6 +81,20 @@ while IFS= read -r file; do
 done < <(find src store .github settings.gradle.kts gradle.properties package.json .releaserc.json VERIFICATION.md \
            -type f \( -name '*.kt' -o -name '*.json' -o -name '*.conf' -o -name '*.md' -o -name '*.yml' -o -name '*.html' -o -name '*.kts' -o -name '*.properties' \) \
            ! -path 'src/main/kotlin/com/panomc/plugins/license/*' 2>/dev/null)
+
+# ---- the template's own CI job -------------------------------------------------------------------------------------------------
+# `rename-smoke` renames a copy of the unrenamed template; in a renamed repository it would hit the guard above and fail on every
+# push. Drop that job (and any blank line it leaves behind) from the workflow; the job `build` stays.
+if [ -f .github/workflows/ci.yml ]; then
+  awk '
+    /^  rename-smoke:/ { skip = 1; next }
+    skip && /^  [A-Za-z0-9_-]+:/ { skip = 0 }
+    skip && /^[^ ]/ { skip = 0 }
+    !skip { print }
+  ' .github/workflows/ci.yml | sed -e :a -e '/^\n*$/{$d;N;ba' -e '}' > .github/workflows/ci.yml.tmp
+  mv .github/workflows/ci.yml.tmp .github/workflows/ci.yml
+fi
+! grep -rqs 'rename-smoke' .github/workflows || die "could not remove the rename-smoke job from .github/workflows"
 
 # ---- files that are rewritten rather than substituted ------------------------------------------------------------------------
 sed -i \

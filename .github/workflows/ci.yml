@@ -60,6 +60,9 @@ jobs:
           git ls-files -z | xargs -0 -I{} cp --parents {} "$copy"
           cd "$copy"
           ./scripts/rename.sh foo-bar "Foo Bar"
+          # the template-only job must not survive in a renamed repository (it would fail there on every push)
+          ! grep -rq rename-smoke .github/workflows
+          grep -q '^  build:' .github/workflows/ci.yml
           test -f src/main/kotlin/com/panomc/plugins/marketpay/foobar/FooBarProvider.kt
           ./gradlew build --no-daemon
           ls build/libs/pano-plugin-market-foo-bar-*.jar

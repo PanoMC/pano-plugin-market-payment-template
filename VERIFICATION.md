@@ -49,7 +49,7 @@ one that the brief marks `UNVERIFIED` here, and say how the code behaves if the 
 |---|---|
 | the signature covers `"<t>." + rawBody` | every webhook is rejected with 400 (`signature: mismatch`): payments stay pending until market's reconciliation (`queryPayment`) confirms them; nothing is ever accepted by mistake |
 | `amountPaid` is the collected amount | a `paid` without it becomes `NeedsReview(OTHER)`; a different meaning cannot make a wrong `Succeeded` because the amount is never taken from anywhere else |
-| refunds answer a final status synchronously | an unknown status is `RefundResult.Unknown`; market polls `queryRefund` |
+| refunds answer a final status synchronously | a 2xx answer with an unknown or missing status is `RefundResult.Pending` carrying the gateway refund id (without an id: `Unknown`); market polls `queryRefund` |
 
 ## Sandbox / live record
 
