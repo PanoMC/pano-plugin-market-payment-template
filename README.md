@@ -100,6 +100,24 @@ empty, when an English text differs from its fallback in the code, or when a key
 Keys of the settings reuse the names the old Market catalogue used for the same gateway, so settings saved before the
 plugin existed attach to it.
 
+## The slot view (optional UI)
+
+`src/theme/views/PaymentNote.svelte` is a complete example of a view a gateway plugin puts into the Market's checkout: one file,
+and its `<script module>` says where it goes.
+
+```svelte
+<script module>
+  export const view = { slot: 'market:checkout:payment', id: "example" };
+</script>
+```
+
+`id` is the gateway's method id, so the Market shows the note only while this method is chosen. A gateway with an in-page step
+puts its view into `market:order:payment` instead (id = the gateway key; props `order`, `payment`, `props`, `locale`,
+`continuePayment`, `refresh`), and a panel hint is a view with `hook: '<hook name>'`. The build is the kit preset in
+`rollup.config.js` (`bun run build`, `bunx pano-plugin check --strict --styles badge`); a plugin that needs no UI deletes
+`rollup.config.js`, `package.json` dependencies and `src/theme/`, and builds as a Kotlin-only plugin. `scripts/rename.sh`
+renames the namespace of the view along with the rest.
+
 ## Testing
 
 ```sh
