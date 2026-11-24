@@ -307,6 +307,8 @@ class ExampleFlowTest {
         env.gateway.clearRequests()
         val result = refund(env, refundRequest(eur(1000), full = true, attempt = attempt(paid = eur(1000), refunded = eur(1000))))
         assertEquals("nothing_to_refund", (result as RefundResult.Failed).code)
+        assertEquals("Nothing is left to refund.", result.message)
+        assertEquals("İade edilecek tutar kalmadı.", ExampleTexts.resolve(ExampleTexts.errorNothingToRefund, "tr-TR"))
         assertTrue(env.gateway.requests.isEmpty())
     }
 

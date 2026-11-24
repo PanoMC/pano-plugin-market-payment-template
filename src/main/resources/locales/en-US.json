@@ -40,7 +40,8 @@
   "errors": {
     "missing": "This field is required.",
     "authentication": "Example Pay rejected the API key.",
-    "unreachable": "Example Pay could not be reached. Try again in a moment."
+    "unreachable": "Example Pay could not be reached. Try again in a moment.",
+    "nothingToRefund": "Nothing is left to refund."
   },
   "messages": {
     "connectionOk": "The connection to Example Pay works."

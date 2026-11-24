@@ -40,7 +40,8 @@
   "errors": {
     "missing": "Это поле обязательно.",
     "authentication": "Example Pay отклонил API-ключ.",
-    "unreachable": "Не удалось связаться с Example Pay. Повторите попытку чуть позже."
+    "unreachable": "Не удалось связаться с Example Pay. Повторите попытку чуть позже.",
+    "nothingToRefund": "Возвращать больше нечего."
   },
   "messages": {
     "connectionOk": "Соединение с Example Pay работает."

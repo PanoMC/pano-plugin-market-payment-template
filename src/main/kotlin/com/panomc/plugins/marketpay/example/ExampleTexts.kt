@@ -1,6 +1,8 @@
 package com.panomc.plugins.marketpay.example
 
 import com.panomc.plugins.market.spi.common.LocalizedText
+import io.vertx.core.json.JsonObject
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Every admin-facing text of the plugin as an i18n key (16 section 8.2): the key is `plugins.<pluginId>.<path>`, the
@@ -53,10 +55,37 @@ object ExampleTexts {
     val errorMissing = text("errors.missing", "This field is required.")
     val errorAuthentication = text("errors.authentication", "Example Pay rejected the API key.")
     val errorUnreachable = text("errors.unreachable", "Example Pay could not be reached. Try again in a moment.")
+    val errorNothingToRefund = text("errors.nothingToRefund", "Nothing is left to refund.")
     val connectionOk = text("messages.connectionOk", "The connection to Example Pay works.")
 
     val eligibilityCurrency = text("eligibility.currency", "Example Pay cannot take payments in this currency.")
 
     /** Every text above, in declaration order. */
     val all: List<LocalizedText> get() = registry.toList()
+
+    private val bundles = ConcurrentHashMap<String, JsonObject>()
+
+    private fun bundle(file: String): JsonObject = bundles.getOrPut(file) {
+        ExampleTexts::class.java.getResourceAsStream("/locales/$file.json")
+            ?.use { JsonObject(it.readBytes().toString(Charsets.UTF_8)) }
+            ?: JsonObject()
+    }
+
+    /**
+     * Resolves a key text on the server, for the plain `String` message fields market stores and shows as they are
+     * (refund, payment and subscription errors). Reads this plugin's own locale files in [locale] (usually
+     * `ctx.site.defaultLocale`) and falls back to the English text.
+     */
+    fun resolve(text: LocalizedText, locale: String): String {
+        val key = text.key ?: return text.resolve(locale)
+        val tag = locale.trim().replace('_', '-').lowercase()
+        val file = when {
+            tag == "tr" || tag.startsWith("tr-") -> "tr"
+            tag == "ru" || tag.startsWith("ru-") -> "ru"
+            else -> "en-US"
+        }
+        var node: Any? = bundle(file)
+        for (part in key.removePrefix("plugins.$PLUGIN_ID.").split('.')) node = (node as? JsonObject)?.getValue(part)
+        return (node as? String)?.takeIf { it.isNotBlank() } ?: text.fallback
+    }
 }

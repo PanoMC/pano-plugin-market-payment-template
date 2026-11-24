@@ -293,7 +293,7 @@ class ExampleProvider(
         } else {
             request.amount
         }
-        if (amount.amount <= 0L) return RefundResult.Failed("nothing_to_refund", "nothing is left to refund")
+        if (amount.amount <= 0L) return RefundResult.Failed("nothing_to_refund", ExampleTexts.resolve(ExampleTexts.errorNothingToRefund, ctx.site.defaultLocale))
         val wire = ExampleMapper.toWire(amount)
         val body = JsonObject().put("amount", wire.minor).put("currency", wire.currency).put("reference", attempt.reference)
         request.reason?.let { body.put("reason", it.take(200)) }

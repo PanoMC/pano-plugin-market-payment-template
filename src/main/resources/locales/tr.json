@@ -40,7 +40,8 @@
   "errors": {
     "missing": "Bu alan zorunludur.",
     "authentication": "Example Pay API anahtarını reddetti.",
-    "unreachable": "Example Pay'e ulaşılamadı. Biraz sonra tekrar deneyin."
+    "unreachable": "Example Pay'e ulaşılamadı. Biraz sonra tekrar deneyin.",
+    "nothingToRefund": "İade edilecek tutar kalmadı."
   },
   "messages": {
     "connectionOk": "Example Pay bağlantısı çalışıyor."
